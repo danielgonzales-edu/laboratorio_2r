@@ -1,0 +1,209 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+dataset = read.csv("dataset.csv")
+dataset
+```
+```{r}
+#1. . Cree un conjunto de columnas nuevas: día, mes, año, hora y minutos a partir de la comlumna datetime, para esto investigue como puede “desarmar” la variable datetime utilizando lubridate y mutate.
+library(lubridate)
+library(ggplot2)
+library(dplyr)
+
+dataset$dteday <- ymd(dataset$dteday)
+
+dataset = dataset %>%
+    mutate(
+      dia = day(dteday),
+      mes = month(dteday),
+      año = year(dteday)
+    )
+dataset
+```
+
+```{r}
+#2. . ¿Qué mes es el que tiene la mayor demanda? Muestre una tabla y una gráfica
+demanda_mes = dataset %>%
+                  group_by(mes)%>%
+                  summarise(cantidad = sum(cnt))
+print(demanda_mes)
+```
+```{r}
+demanda_mes %>%
+  ggplot(aes(x=mes, y=cantidad)) +
+    geom_bar(stat = "identity", show.legend = FALSE)+
+    xlab("Mes")+
+    ylab("Cantidad")+
+    ggtitle("Demanda por mes")+
+    scale_x_continuous(n.breaks=10)
+```
+
+```{r}
+#3. ¿Qué rango de hora es la de mayor demanda? Muestre una tabla y una gráfica
+demanda_hora = dataset %>%
+                  group_by(hr)%>%
+                  summarise(cantidad = sum(cnt))
+print(demanda_hora)
+```
+
+```{r}
+demanda_hora %>%
+  ggplot(aes(x=hr, y=cantidad)) +
+    geom_bar(stat = "identity", show.legend = FALSE)+
+    xlab("Hora")+
+    ylab("Cantidad")+
+    ggtitle("Demanda por mes")+
+    scale_x_continuous(n.breaks=10)
+```
+
+```{r}
+#4. ¿Qué temporada es la mas alta? Muestre una tabla.
+demanda_temporada = dataset %>%
+                  group_by(season)%>%
+                  summarise(cantidad = sum(cnt))
+print(demanda_temporada)
+```
+
+```{r}
+demanda_temporada %>%
+  ggplot(aes(x=season, y=cantidad)) +
+    geom_bar(stat = "identity", show.legend = FALSE)+
+    xlab("Temporada")+
+    ylab("Cantidad")+
+    ggtitle("Demanda por mes")+
+    scale_x_continuous(n.breaks=10)
+```
+
+```{r}
+#5. ¿A que temperatura disminuye la demanda? Muestre una gráfica para analizar y dar su respuesta.
+demanda_temperatura = dataset %>%
+                  group_by(temp) %>%
+                  summarise(cantidad = sum(cnt)) %>%
+                  arrange(desc(cantidad))
+demanda_temperatura
+```
+
+```{r}
+ggplot(demanda_temperatura, aes(x=temp, y=cantidad)) + 
+    geom_point()+
+    xlab("Temperatura")+
+    ylab("Cantidad")+
+    ggtitle("Demanda por temperatura")+
+    geom_smooth(method="loess" ,se = FALSE, colour="red")
+```
+
+```{r}
+#6. ¿A que humedad disminuye la demanda? Muestre una gráfica para analizar y dar su respuesta.
+demanda_humedad <- dataset %>%
+                  group_by(hum) %>%
+                  summarise(cantidad = sum(cnt))
+demanda_humedad
+```
+
+```{r}
+ggplot(demanda_humedad, aes(x=hum, y=cantidad)) + 
+    geom_point()+
+    xlab("Humedad")+
+    ylab("Cantidad")+
+    ggtitle("Demanda por humedad")+
+    geom_smooth(method="loess" ,se = FALSE, colour="blue")
+```
+
+```{r}
+#7. ¿Que condiciones climáticas serian ideales para nuestra demanda? (considere una función de densidad bivariable para la temperatura y la humedad)
+ggplot(dataset, aes(x=hum, y=temp, z=cnt)) + 
+    geom_bin_2d()+
+    xlab("Humedad")+
+    ylab("Temperatura")+
+    ggtitle("Condiciones climaticas")
+```
+
+```{r}
+#8. Mueste una gráfica de la densidad de rentas.
+ggplot(dataset, aes(cnt)) + 
+    geom_histogram(binwidth = 100, color="#e9ecef" )+
+    xlab("Número de rentas")+
+    ylab("Cantidad")+
+    ggtitle("Densidad de rentas")+
+    scale_x_continuous(n.breaks=10)
+```
+
+```{r}
+#9. ¿En promedio de personas que rentan bicicletas y están registradas?
+mean(dataset$registered)
+```
+
+```{r}
+#10. Determine la mediana de personas que rentan bicicletas y no están registradas.
+median(dataset$casual)
+```
+
+```{r}
+#11. Deterimne la renta total, renta promedio por cada tipo de estación.
+dataset %>%
+  group_by(season) %>%
+  summarise(Total = sum(cnt), Promedio = mean(cnt))
+```
+
+```{r}
+#12. Determine y muestre una gráfica de barras la cantidad de rentas por tipo de temporada.
+demanda_temporada %>%
+  ggplot(aes(x=season, y=cantidad)) +
+    geom_bar(stat = "identity", show.legend = FALSE)+
+    xlab("Estación")+
+    ylab("Cantidad de rentas")+
+    ggtitle("Cantidad de rentas por estación")
+```
+
+```{r}
+#13. Muestre una gráfica de la densidad por hora.
+dataset %>%
+  group_by(hr)%>%
+  summarise(cantidad = sum(cnt))%>%
+  ggplot(aes(x=hr, y=cantidad)) +
+    geom_bar(stat = "identity", show.legend = FALSE)+
+    xlab("Hora")+
+    ylab("Cantidad de rentas")+
+    ggtitle("Cantida de rentas por hora")
+```
+
+```{r}
+#14. Muestre una gráfica de barras por día del mes como eje x y la cantidad total de alquileres como el eje Y.
+dataset %>%
+  group_by(dia)%>%
+  summarise(cantidad = sum(cnt))%>%
+  ggplot(aes(x=dia, y=cantidad))+ 
+  geom_bar(stat = "identity")+
+  xlab("Día del mes")+
+  ylab("Cantidad")+
+  ggtitle("Rentas por día")
+
+```
+
+```{r}
+#15. Muestre una serie temporal (gráfica) con el tiempo (mes-dia-año) como eje de tiempo y la cantidad de alquieleres como eje Y.
+dataset %>%
+  group_by(dteday)%>%
+  summarise(quantity = sum(cnt))%>%
+  ggplot(aes(x=dteday, y=quantity))+ 
+  geom_line( color=rgb(0.8,0.1,0.1,0.6))+
+  xlab("Hora del dia")+
+  ylab("Cantidad de rentas")+
+  ggtitle("Rentas por hora del día")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  geom_smooth(method="lm" ,se = FALSE, colour="yellow")
+```
+
+```{r}
+#16. Muestre una gráfica de puntos que relaciones la temperatura como ejer X y la humedad como eje Y.
+ggplot(dataset, aes(x = temp, y = hum)) +
+  geom_point(color = "blue") +
+  labs(title = "Relación entre temperatura y humedad",
+       x = "Temperatura",
+       y = "Humedad") +
+  theme_minimal()
+```
+
